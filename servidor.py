@@ -17,20 +17,14 @@ CORS(app)
 
 # Carga del modelo
 try:
-    gender_model = tf.keras.models.load_model('gender_model_probado.h5')
-    age_model = tf.keras.models.load_model("age_model_probado.h5", custom_objects={'mse': MeanSquaredError()})
+    gender_model = tf.keras.models.load_model('modelos/gender_model.h5')
+    age_model = tf.keras.models.load_model("modelos/age_model.h5", custom_objects={'mse': MeanSquaredError()})
+    ethnicity_model = tf.keras.models.load_model("modelos/ethnicity_model.h5")
 except Exception as e:
     print(f"Error al cargar el modelo: {e}")
     exit(1)
 
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-
-def save_image_array(image_array, file_path):
-    # Eliminar las dimensiones extra y convertir a escala de grises
-    image_2d = image_array[0, :, :, 0] * 255  # Quitar batch y normalización
-    image_pil = Image.fromarray(image_2d.astype('uint8'))  # Convertir a formato PIL
-    image_pil.save(file_path)
-
 
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -64,10 +58,6 @@ def predict():
         image_array = np.expand_dims(image_array, axis=-1)  # Añadir canal (48, 48, 1)
         image_array = np.expand_dims(image_array, axis=0)  # Añadir batch (1, 48, 48, 1)
 
-        # Guardar image_array como imagen
-        processed_image_path = 'processed_image_array.jpg'
-        save_image_array(image_array, processed_image_path)
-
         # Predicción
         predictions = gender_model.predict(image_array)
         predicted_class = np.argmax(predictions)  # Clase predicha
@@ -80,7 +70,15 @@ def predict():
         age_predictions = age_model.predict(image_array)
         predicted_age = int(age_predictions[0]) 
 
-        return jsonify({'gender': predicted_gender, 'age': predicted_age})
+        # Predicción de etnia
+        ethnicity_predictions = ethnicity_model.predict(image_array)
+        ethnicity_predicted_class = np.argmax(ethnicity_predictions)  # Clase predicha
+
+        # Mapear clase a etiqueta
+        ethnicity = {0: 'Caucásico', 1: 'Asiático', 2: 'Africano', 3: 'Latino'}  # Define tus clases aquí
+        predicted_ethnicity = ethnicity.get(ethnicity_predicted_class, 'unknown')
+
+        return jsonify({'gender': predicted_gender, 'age': predicted_age, 'ethnicity': predicted_ethnicity})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
