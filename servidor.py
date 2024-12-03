@@ -17,8 +17,8 @@ CORS(app)
 
 # Carga del modelo
 try:
-    gender_model = tf.keras.models.load_model('gender_model.h5')
-    age_model = tf.keras.models.load_model("modelo_prediccion_edad.h5", custom_objects={'mse': MeanSquaredError()})
+    gender_model = tf.keras.models.load_model('gender_model_probado.h5')
+    age_model = tf.keras.models.load_model("age_model_probado.h5", custom_objects={'mse': MeanSquaredError()})
 except Exception as e:
     print(f"Error al cargar el modelo: {e}")
     exit(1)
